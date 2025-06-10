@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { login, logout as apiLogout, getToken } from '../services/auth/auth';
+import { login, logout as apiLogout, getToken } from '../../services/auth/auth';
 import axios from 'axios';
 import { useToast } from 'vue-toast-notification';
 

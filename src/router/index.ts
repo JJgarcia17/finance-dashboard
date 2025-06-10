@@ -3,7 +3,7 @@ import Home from '../views/Home.vue';
 import Login from '../views/auth/Login.vue';
 import Register from '../views/auth/Register.vue';
 import Dashboard from '../views/Dashboard.vue';
-import { useAuthStore } from '../stores/auth';
+import { useAuthStore } from '../stores/auth/auth';
 
 const routes = [
   {
@@ -25,6 +25,12 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
+  },
+  {
+    path: '/categories',
+    name: 'Categories',
+    component: () => import('../views/category/Categories.vue'),
+    meta: { requiresAuth: true },
   }
 ];
 

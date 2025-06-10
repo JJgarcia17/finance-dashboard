@@ -95,7 +95,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { register } from '../../services/auth/register';
-import { useAuthStore } from '../../stores/auth';
+import { useAuthStore } from '../../stores/auth/auth';
 
 const name = ref('');
 const email = ref('');
