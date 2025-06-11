@@ -10,7 +10,7 @@
     </div>
     <div class="flex-1">
       <div class="text-sm text-gray-500 dark:text-gray-400 mb-0.5">{{ label }}</div>
-      <div class="text-xl font-bold text-gray-800 dark:text-white">{{ value }}</div>
+      <div class="text-xl font-bold text-gray-800">{{ value }}</div>
       <div v-if="change !== undefined" :class="changeClass">
         <span>{{ change >= 0 ? '+' : '' }}{{ change }}%</span>
       </div>
