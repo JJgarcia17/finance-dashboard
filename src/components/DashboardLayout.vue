@@ -49,7 +49,7 @@ const userInitials = computed(() => {
 const menu = [
   { label: 'Dashboard', to: '/dashboard', icon: '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" stroke="currentColor" stroke-width="2"/></svg>' },
   { label: 'Categorías', to: '/categories', icon: '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' },
-  // { label: 'Cuentas', to: '/accounts', icon: '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 7V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/></svg>' },
+  { label: 'Cuentas', to: '/accounts', icon: '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 7V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/></svg>' },
   // { label: 'Transacciones', to: '/transactions', icon: '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 8v8m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/></svg>' },
   // { label: 'Presupuestos', to: '/budgets', icon: '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18" stroke="currentColor" stroke-width="2"/></svg>' },
 ];

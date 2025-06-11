@@ -35,7 +35,7 @@
         </MetricCard>
         <MetricCard
           label="Cuentas"
-          :value="'5'"
+          :value="accountsCount"
           iconBg="linear-gradient(135deg, #a78bfa 0%, #f472b6 100%)"
         >
           <template #icon>
@@ -56,6 +56,17 @@
 import DashboardLayout from '../components/DashboardLayout.vue';
 import WelcomeBanner from '../components/WelcomeBanner.vue';
 import MetricCard from '../components/MetricCard.vue';
+import { onMounted, computed } from 'vue';
+import { useAccountsStore } from '../stores/account/accounts';
+
+const accountsStore = useAccountsStore();
+const accountsCount = computed(() => accountsStore.accounts.length);
+
+onMounted(() => {
+  if (!accountsStore.accounts.length) {
+    accountsStore.fetchAll();
+  }
+});
 </script>
 
 <style scoped>
