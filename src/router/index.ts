@@ -37,11 +37,16 @@ const routes = [
     name: 'Accounts',
     component: () => import('../views/account/Accounts.vue'),
     meta: { requiresAuth: true },
-  },
-  {
+  },  {
     path: '/transactions',
     name: 'Transactions',
     component: () => import('../views/transaction/Transactions.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/budgets',
+    name: 'Budgets',
+    component: () => import('../views/budget/Budgets.vue'),
     meta: { requiresAuth: true },
   }
 ];
