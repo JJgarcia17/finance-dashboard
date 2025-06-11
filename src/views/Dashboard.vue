@@ -5,8 +5,7 @@
       <div class="metrics-row">
         <MetricCard
           label="Saldo Total"
-          :value="'$12,500.00'"
-          :change="2.5"
+          :value="stats.net_balance.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })"
           iconBg="linear-gradient(135deg, #6366f1 0%, #60a5fa 100%)"
         >
           <template #icon>
@@ -15,8 +14,7 @@
         </MetricCard>
         <MetricCard
           label="Ingresos"
-          :value="'$4,200.00'"
-          :change="5.1"
+          :value="stats.total_income.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })"
           iconBg="linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)"
         >
           <template #icon>
@@ -25,8 +23,7 @@
         </MetricCard>
         <MetricCard
           label="Gastos"
-          :value="'$2,800.00'"
-          :change="-1.8"
+          :value="stats.total_expenses.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })"
           iconBg="linear-gradient(135deg, #f87171 0%, #fbbf24 100%)"
         >
           <template #icon>
@@ -53,19 +50,32 @@
 </template>
 
 <script setup lang="ts">
+// Corrige la importación de componentes Vue para soportar proyectos Vite + script setup
 import DashboardLayout from '../components/DashboardLayout.vue';
 import WelcomeBanner from '../components/WelcomeBanner.vue';
 import MetricCard from '../components/MetricCard.vue';
 import { onMounted, computed } from 'vue';
 import { useAccountsStore } from '../stores/account/accounts';
+import { useTransactionsStore } from '../stores/transaction/transactions';
 
+const transactionsStore = useTransactionsStore();
 const accountsStore = useAccountsStore();
 const accountsCount = computed(() => accountsStore.accounts.length);
+const stats = computed(() => transactionsStore.stats || {
+  total_transactions: 0,
+  total_income: 0,
+  total_expenses: 0,
+  net_balance: 0,
+  current_month_transactions: 0,
+  current_month_income: 0,
+  current_month_expenses: 0
+});
 
 onMounted(() => {
   if (!accountsStore.accounts.length) {
     accountsStore.fetchAll();
   }
+  transactionsStore.fetchStats();
 });
 </script>
 

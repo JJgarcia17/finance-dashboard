@@ -1,10 +1,16 @@
 <template>
   <div
     class="flex items-center gap-4 rounded-xl shadow-md px-6 py-5 min-w-[180px] min-h-[90px] transition hover:shadow-lg bg-white dark:bg-[var(--color-surface)]"
+    :aria-label="`${label}: ${value}`"
+    :title="`${label}: ${value}`"
+    role="region"
   >
     <div
       class="flex items-center justify-center rounded-lg text-xl w-12 h-12 shrink-0"
       :class="iconBgClass"
+      :aria-label="label + ' icon'"
+      :title="label + ' icon'"
+      role="img"
     >
       <slot name="icon" />
     </div>
