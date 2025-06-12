@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getCommonHeaders } from '../common/headers';
-import type { Transaction, TransactionFilters, TransactionPayload } from '../../types/transaction/transaction';
+import type { TransactionFilters, TransactionPayload } from '../../types/transaction/transaction';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 const BASE = `${API_URL}/transactions`;

@@ -2,6 +2,12 @@
 
 export type CategoryType = 'income' | 'expense';
 
+export interface IconOption {
+  value: string;
+  label: string;
+  category?: 'general' | 'transport' | 'food' | 'entertainment' | 'shopping' | 'health' | 'education' | 'business';
+}
+
 export interface Category {
   id: number;
   user_id: number;

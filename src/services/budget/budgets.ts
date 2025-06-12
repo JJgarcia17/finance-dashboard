@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getCommonHeaders } from '../common/headers';
-import type { Budget, BudgetFilters, CreateBudgetData, UpdateBudgetData } from '../../types/budget/budget';
+import type { BudgetFilters, CreateBudgetData, UpdateBudgetData } from '../../types/budget/budget';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 const BASE = `${API_URL}/budgets`;
