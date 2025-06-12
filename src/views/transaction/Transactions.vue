@@ -1,195 +1,483 @@
 <template>
   <DashboardLayout>
-    <div class="max-w-5xl mx-auto py-8 px-2">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <h1 class="text-2xl font-bold text-[var(--color-primary)]">Transacciones</h1>
-        <button @click="showCreate = true" class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-4 py-2 rounded shadow transition flex items-center gap-2" data-testid="new-transaction-btn">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          Nueva transacción
+    <div class="dashboard-container">
+      <!-- Header Section -->
+      <div class="dashboard-header mb-8">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Transacciones</h1>
+          <p class="text-gray-600">Gestiona todas tus transacciones financieras</p>
+        </div>
+        <button 
+          @click="showCreate = true" 
+          class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-200 ease-in-out flex items-center gap-3 font-semibold hover:transform hover:scale-105" 
+          data-testid="new-transaction-btn"
+        >
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+            <path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Nueva Transacción
         </button>
       </div>
-      <!-- Filtros -->
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8 items-end bg-white/80 p-4 rounded-xl shadow border border-[var(--color-border)]">
-        <div class="flex flex-col gap-1 min-w-0 md:col-span-1">
-          <label for="trx-type-filter" class="text-xs font-semibold text-gray-600">Tipo</label>
-          <select id="trx-type-filter" v-model="filters.type" class="px-3 py-2 rounded border text-sm w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]">
-            <option :value="undefined">Todos</option>
-            <option value="income">Ingreso</option>
-            <option value="expense">Gasto</option>
-            <option value="transfer">Transferencia</option>
-          </select>
+
+      <!-- Métricas Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 transition-all duration-300 hover:shadow-xl">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold text-gray-600 mb-1">Total Transacciones</p>
+              <p class="text-3xl font-bold text-gray-900">{{ stats?.total_transactions ?? '-' }}</p>
+            </div>
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
         </div>
-        <div class="flex flex-col gap-1 min-w-0 md:col-span-1">
-          <label for="trx-account-filter" class="text-xs font-semibold text-gray-600">Cuenta</label>
-          <select id="trx-account-filter" v-model="filters.account_id" class="px-3 py-2 rounded border text-sm w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]">
-            <option :value="undefined">Todas</option>
-            <option v-for="acc in accounts" :key="acc.id" :value="acc.id">{{ acc.name }}</option>
-          </select>
+
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 transition-all duration-300 hover:shadow-xl">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold text-gray-600 mb-1">Ingresos Totales</p>
+              <p class="text-3xl font-bold text-green-600">{{ stats?.total_income !== undefined ? stats.total_income.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) : '-' }}</p>
+            </div>
+            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24">
+                <path d="M7 11l5-5m0 0l5 5m-5-5v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
         </div>
-        <div class="flex flex-col gap-1 min-w-0 md:col-span-1">
-          <label for="trx-category-filter" class="text-xs font-semibold text-gray-600">Categoría</label>
-          <select id="trx-category-filter" v-model="filters.category_id" class="px-3 py-2 rounded border text-sm w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]">
-            <option :value="undefined">Todas</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-          </select>
-        </div>
-        <div class="flex flex-col gap-1 min-w-0 md:col-span-2">
-          <label for="trx-date-range" class="text-xs font-semibold text-gray-600">Rango de fechas</label>
-          <div class="flex gap-2">
-            <input id="trx-date-start" v-model="filters.min_date" type="date" class="px-3 py-2 rounded border text-sm w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
-            <input id="trx-date-end" v-model="filters.max_date" type="date" class="px-3 py-2 rounded border text-sm w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 transition-all duration-300 hover:shadow-xl">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold text-gray-600 mb-1">Gastos Totales</p>
+              <p class="text-3xl font-bold text-red-600">{{ stats?.total_expenses !== undefined ? stats.total_expenses.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) : '-' }}</p>
+            </div>
+            <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24">
+                <path d="M17 13l-5 5m0 0l-5-5m5 5V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
-      <div v-if="filterError" class="mb-4 text-center text-red-500 bg-red-50 border border-red-200 rounded p-2 animate-pulse">{{ filterError }}</div>
-      <!-- Métricas: solo los tres cards requeridos -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        <MetricCard label="Transacciones totales" :value="stats?.total_transactions ?? '-'">
-          <template #icon><i class="fas fa-list"></i></template>
-        </MetricCard>
-        <MetricCard label="Ingresos totales" :value="stats?.total_income !== undefined ? stats.total_income.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) : '-'">
-          <template #icon><i class="fas fa-arrow-down text-green-500"></i></template>
-        </MetricCard>
-        <MetricCard label="Gastos totales" :value="stats?.total_expenses !== undefined ? stats.total_expenses.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) : '-'">
-          <template #icon><i class="fas fa-arrow-up text-red-500"></i></template>
-        </MetricCard>
+
+      <!-- Filters Section -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div class="space-y-2">
+            <label for="trx-type-filter" class="block text-sm font-semibold text-gray-700">Tipo</label>
+            <select 
+              id="trx-type-filter" 
+              v-model="filters.type" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
+            >
+              <option :value="undefined">Todos los tipos</option>
+              <option value="income">💰 Ingreso</option>
+              <option value="expense">💸 Gasto</option>
+              <option value="transfer">🔄 Transferencia</option>
+            </select>
+          </div>
+          
+          <div class="space-y-2">
+            <label for="trx-account-filter" class="block text-sm font-semibold text-gray-700">Cuenta</label>
+            <select 
+              id="trx-account-filter" 
+              v-model="filters.account_id" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
+            >
+              <option :value="undefined">Todas las cuentas</option>
+              <option v-for="acc in accounts" :key="acc.id" :value="acc.id">{{ acc.name }}</option>
+            </select>
+          </div>
+          
+          <div class="space-y-2">
+            <label for="trx-category-filter" class="block text-sm font-semibold text-gray-700">Categoría</label>
+            <select 
+              id="trx-category-filter" 
+              v-model="filters.category_id" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
+            >
+              <option :value="undefined">Todas las categorías</option>
+              <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+            </select>
+          </div>
+          
+          <div class="space-y-2">
+            <label for="trx-date-start" class="block text-sm font-semibold text-gray-700">Fecha inicio</label>
+            <input 
+              id="trx-date-start" 
+              v-model="filters.min_date" 
+              type="date" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            />
+          </div>
+          
+          <div class="space-y-2">
+            <label for="trx-date-end" class="block text-sm font-semibold text-gray-700">Fecha fin</label>
+            <input 
+              id="trx-date-end" 
+              v-model="filters.max_date" 
+              type="date" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            />
+          </div>
+        </div>
       </div>
-      <div v-if="statsError" class="mb-4 text-center text-red-500 bg-red-50 border border-red-200 rounded p-2 animate-pulse">{{ statsError }}</div>
-      <!-- Tabla de transacciones con estilo premium -->
-      <div class="overflow-x-auto rounded-2xl shadow-lg border border-gray-200 bg-white">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-500 uppercase text-xs tracking-wider">
-              <th class="px-4 py-3 font-semibold text-left"> </th>
-              <th class="px-4 py-3 font-semibold text-left">Fecha</th>
-              <th class="px-4 py-3 font-semibold text-left">Cuenta</th>
-              <th class="px-4 py-3 font-semibold text-left">Detalles</th>
-              <th class="px-4 py-3 font-semibold text-left">ID</th>
-              <th class="px-4 py-3 font-semibold text-left">Tipo</th>
-              <th class="px-4 py-3 font-semibold text-right">Monto</th>
-              <th class="px-4 py-3 font-semibold text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="trx in transactions" :key="trx.id" class="border-b last:border-b-0 hover:bg-blue-50/40 transition group">
-              <td class="px-4 py-3 align-middle">
-                <span :class="[
-                  'inline-flex items-center justify-center w-7 h-7 rounded-full shadow-sm border',
-                  trx.type === 'income' ? 'bg-green-50 border-green-200 text-green-500' : trx.type === 'expense' ? 'bg-red-50 border-red-200 text-red-500' : 'bg-blue-50 border-blue-200 text-blue-500',
-                  'group-hover:scale-110 transition-transform duration-200'
-                ]">
-                  <svg v-if="trx.type === 'income'" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19V5m0 0l-7 7m7-7l7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <svg v-else-if="trx.type === 'expense'" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14m0 0l7-7m-7 7l-7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8" stroke-linecap="round"/></svg>
-                </span>
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-gray-700 font-medium">
-                <span>{{ trx.transaction_date }}</span>
-                <span v-if="trx.created_at" class="block text-[10px] text-gray-400 font-mono">{{ trx.created_at.split(' ')[1] }}</span>
-              </td>
-              <td class="px-4 py-3">{{ trx.account?.name || '-' }}</td>
-              <td class="px-4 py-3 text-gray-600">{{ trx.description || '-' }}</td>
-              <td class="px-4 py-3 text-xs text-gray-400 font-mono" aria-label="ID de referencia">{{ trx.reference_number || '-' }}</td>
-              <td class="px-4 py-3">
-                <span :class=" [
-                  'px-2 py-1 rounded text-xs font-semibold shadow-sm',
-                  trx.type === 'income' ? 'bg-green-100 text-green-700' : trx.type === 'expense' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-                ]">{{ typeLabels[trx.type] }}</span>
-              </td>
-              <td class="px-4 py-3 text-right font-bold">
-                <span :class="trx.type === 'income' ? 'text-green-600' : trx.type === 'expense' ? 'text-red-600' : 'text-blue-600'">
-                  {{ trx.type === 'expense' ? '-' : '+' }}{{ trx.amount.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) }}
-                </span>
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-right flex gap-2 justify-end items-center">
-                <button @click="edit(trx)" class="hover:bg-blue-50 p-1 rounded transition" title="Editar" aria-label="Editar transacción">
-                  <i class="fas fa-pen text-blue-600 w-5 h-5"></i>
-                </button>
-                <button v-if="trx.can_delete" @click="remove(trx.id)" class="hover:bg-red-50 p-1 rounded transition" title="Eliminar" aria-label="Eliminar transacción">
-                  <i class="fas fa-trash text-red-500 w-5 h-5"></i>
-                </button>
-              </td>
-            </tr>
-            <tr v-if="!transactions.length && !loading">
-              <td colspan="9" class="text-center py-8 text-gray-400">No hay transacciones</td>
-            </tr>
-          </tbody>
-        </table>
+
+      <div v-if="filterError" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-center animate-pulse">
+        {{ filterError }}
       </div>
+
+      <div v-if="statsError" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-center animate-pulse">
+        {{ statsError }}
+      </div>
+
+      <!-- Transactions List -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tipo</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Fecha</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Cuenta</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Descripción</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Categoría</th>
+                <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Monto</th>
+                <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="trx in transactions" :key="trx.id" class="hover:bg-gray-50 transition-colors duration-200">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center gap-3">
+                    <div 
+                      :class="[
+                        'w-10 h-10 rounded-xl flex items-center justify-center shadow-sm',
+                        trx.type === 'income' ? 'bg-green-100 text-green-600' : 
+                        trx.type === 'expense' ? 'bg-red-100 text-red-600' : 
+                        'bg-blue-100 text-blue-600'
+                      ]"
+                    >
+                      <svg v-if="trx.type === 'income'" class="w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <path d="M7 11l5-5m0 0l5 5m-5-5v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      <svg v-else-if="trx.type === 'expense'" class="w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <path d="M17 13l-5 5m0 0l-5-5m5 5V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <span 
+                      :class="[
+                        'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold',
+                        trx.type === 'income' ? 'bg-green-100 text-green-800' : 
+                        trx.type === 'expense' ? 'bg-red-100 text-red-800' : 
+                        'bg-blue-100 text-blue-800'
+                      ]"
+                    >
+                      {{ typeLabels[trx.type] }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{{ trx.transaction_date }}</div>
+                  <div v-if="trx.created_at" class="text-xs text-gray-500">{{ trx.created_at.split(' ')[1] }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{{ trx.account?.name || '-' }}</div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm text-gray-900">{{ trx.description || '-' }}</div>
+                  <div v-if="trx.reference_number" class="text-xs text-gray-500 font-mono">{{ trx.reference_number }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ trx.category?.name || '-' }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right">
+                  <div 
+                    :class="[
+                      'text-lg font-bold',
+                      trx.type === 'income' ? 'text-green-600' : 
+                      trx.type === 'expense' ? 'text-red-600' : 
+                      'text-blue-600'
+                    ]"
+                  >
+                    {{ trx.type === 'expense' ? '-' : '+' }}{{ trx.amount.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) }}
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right">
+                  <div class="flex items-center justify-end gap-2">
+                    <button 
+                      @click="edit(trx)" 
+                      class="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-200 text-sm font-semibold"
+                      title="Editar"
+                    >
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      Editar
+                    </button>
+                    
+                    <button 
+                      v-if="trx.can_delete" 
+                      @click="remove(trx.id)" 
+                      class="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors duration-200 text-sm font-semibold"
+                      title="Eliminar"
+                    >
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              
+              <tr v-if="!transactions.length && !loading">
+                <td colspan="7" class="px-6 py-16 text-center">
+                  <div class="flex flex-col items-center">
+                    <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                      <svg class="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24">
+                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">No hay transacciones</h3>
+                    <p class="text-gray-600 mb-6">Crea tu primera transacción para empezar a rastrear tus finanzas</p>
+                    <button 
+                      @click="showCreate = true" 
+                      class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-200 ease-in-out font-semibold"
+                    >
+                      Crear primera transacción
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Loading State -->
+        <div v-if="loading" class="px-6 py-16 text-center">
+          <div class="inline-flex items-center gap-3 text-blue-600">
+            <svg class="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" class="opacity-75"/>
+            </svg>
+            <span class="text-lg font-semibold">Cargando transacciones...</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Modal crear/editar -->
-      <div v-if="showCreate || editing" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative animate-pop">
-          <button @click="closeModal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl leading-none" aria-label="Cerrar modal">&times;</button>
-          <h2 class="text-lg font-bold mb-6 text-[var(--color-primary)] text-center">{{ editing ? 'Editar' : 'Nueva' }} transacción</h2>
-          <form @submit.prevent="submitForm" class="flex flex-col gap-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1">
-                <label for="trx-amount" class="text-xs font-semibold text-gray-600">Monto</label>
-                <input id="trx-amount" v-model="form.amount" type="number" step="0.01" min="0.01" class="px-3 py-2 rounded border text-sm w-full min-w-0" required />
-              </div>
-              <div class="flex flex-col gap-1">
-                <label for="trx-type" class="text-xs font-semibold text-gray-600">Tipo</label>
-                <select id="trx-type" v-model="form.type" class="px-3 py-2 rounded border text-sm w-full min-w-0" required>
-                  <option value="">Selecciona</option>
-                  <option value="income">Ingreso</option>
-                  <option value="expense">Gasto</option>
-                  <option value="transfer">Transferencia</option>
-                </select>
-              </div>
-              <div class="flex flex-col gap-1">
-                <label for="trx-account" class="text-xs font-semibold text-gray-600">Cuenta</label>
-                <select id="trx-account" v-model="form.account_id" class="px-3 py-2 rounded border text-sm w-full min-w-0" required>
-                  <option value="">Selecciona</option>
-                  <option v-for="acc in accounts" :key="acc.id" :value="String(acc.id)">{{ acc.name }}</option>
-                </select>
-              </div>
-              <div class="flex flex-col gap-1">
-                <label for="trx-category" class="text-xs font-semibold text-gray-600">Categoría</label>
-                <select id="trx-category" v-model="form.category_id" class="px-3 py-2 rounded border text-sm w-full min-w-0" required>
-                  <option value="">Selecciona</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="String(cat.id)">{{ cat.name }}</option>
-                </select>
-              </div>
-              <div class="flex flex-col gap-1">
-                <label for="trx-date" class="text-xs font-semibold text-gray-600">Fecha</label>
-                <input id="trx-date" v-model="form.transaction_date" type="date" class="px-3 py-2 rounded border text-sm w-full min-w-0" required />
-              </div>
-              <div class="flex flex-col gap-1">
-                <label for="trx-description" class="text-xs font-semibold text-gray-600">Descripción</label>
-                <input id="trx-description" v-model="form.description" type="text" maxlength="255" class="px-3 py-2 rounded border text-sm w-full min-w-0" required />
-              </div>
-              <div class="flex flex-col gap-1 col-span-2">
-                <label for="trx-reference" class="text-xs font-semibold text-gray-600">Referencia</label>
-                <input id="trx-reference" v-model="form.reference_number" type="text" maxlength="100" class="px-3 py-2 rounded border text-sm w-full min-w-0" />
-              </div>
-              <div class="flex flex-col gap-1 col-span-2">
-                <label for="trx-notes" class="text-xs font-semibold text-gray-600">Notas</label>
-                <textarea id="trx-notes" v-model="form.notes" maxlength="1000" class="px-3 py-2 rounded border text-sm w-full min-w-0"></textarea>
-              </div>
-            </div>
-            <button type="submit" :disabled="submitting" class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-4 py-2 rounded mt-2 flex items-center justify-center font-semibold transition disabled:opacity-60">
-              <span v-if="submitting" class="animate-spin mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
-              {{ editing ? 'Actualizar' : 'Crear' }}
+      <div v-if="showCreate || editing" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative animate-modal max-h-[90vh] overflow-y-auto">
+          <div class="p-6">
+            <button 
+              @click="closeModal" 
+              class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200" 
+              aria-label="Cerrar modal"
+            >
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
             </button>
-            <div v-if="formError" class="mb-2 text-center text-red-500 bg-red-50 border border-red-200 rounded p-2 animate-pulse" data-testid="form-error">{{ formError }}</div>
-          </form>
+            
+            <div class="text-center mb-6">
+              <div class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24">
+                  <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <h2 class="text-xl font-bold text-gray-900 mb-1">
+                {{ editing ? 'Editar Transacción' : 'Nueva Transacción' }}
+              </h2>
+              <p class="text-sm text-gray-600">
+                {{ editing ? 'Actualiza la información' : 'Registra una nueva transacción financiera' }}
+              </p>
+            </div>
+            
+            <form @submit.prevent="submitForm" class="space-y-6">
+              <!-- Monto y Tipo -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label for="trx-amount" class="block text-sm font-semibold text-gray-700">Monto</label>
+                  <input 
+                    id="trx-amount" 
+                    v-model="form.amount" 
+                    type="number" 
+                    step="0.01" 
+                    min="0.01" 
+                    placeholder="0.00" 
+                    required 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+                  />
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="trx-type" class="block text-sm font-semibold text-gray-700">Tipo</label>
+                  <select 
+                    id="trx-type" 
+                    v-model="form.type" 
+                    required 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-sm"
+                  >
+                    <option value="">Selecciona tipo</option>
+                    <option value="income">💰 Ingreso</option>
+                    <option value="expense">💸 Gasto</option>
+                    <option value="transfer">🔄 Transferencia</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- Cuenta y Categoría -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label for="trx-account" class="block text-sm font-semibold text-gray-700">Cuenta</label>
+                  <select 
+                    id="trx-account" 
+                    v-model="form.account_id" 
+                    required 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-sm"
+                  >
+                    <option value="">Selecciona cuenta</option>
+                    <option v-for="acc in accounts" :key="acc.id" :value="String(acc.id)">{{ acc.name }}</option>
+                  </select>
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="trx-category" class="block text-sm font-semibold text-gray-700">Categoría</label>
+                  <select 
+                    id="trx-category" 
+                    v-model="form.category_id" 
+                    required 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-sm"
+                  >
+                    <option value="">Selecciona categoría</option>
+                    <option v-for="cat in categories" :key="cat.id" :value="String(cat.id)">{{ cat.name }}</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- Fecha y Descripción -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label for="trx-date" class="block text-sm font-semibold text-gray-700">Fecha</label>
+                  <input 
+                    id="trx-date" 
+                    v-model="form.transaction_date" 
+                    type="date" 
+                    required 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+                  />
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="trx-description" class="block text-sm font-semibold text-gray-700">Descripción</label>
+                  <input 
+                    id="trx-description" 
+                    v-model="form.description" 
+                    type="text" 
+                    maxlength="255" 
+                    placeholder="Ej: Compra en supermercado..." 
+                    required 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+                  />
+                </div>
+              </div>
+              
+              <!-- Referencia -->
+              <div class="space-y-2">
+                <label for="trx-reference" class="block text-sm font-semibold text-gray-700">
+                  Número de referencia 
+                  <span class="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input 
+                  id="trx-reference" 
+                  v-model="form.reference_number" 
+                  type="text" 
+                  maxlength="100" 
+                  placeholder="Ej: REF-001, TXN-12345..."
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+                />
+              </div>
+              
+              <!-- Notas -->
+              <div class="space-y-2">
+                <label for="trx-notes" class="block text-sm font-semibold text-gray-700">
+                  Notas adicionales 
+                  <span class="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <textarea 
+                  id="trx-notes" 
+                  v-model="form.notes" 
+                  maxlength="1000" 
+                  rows="3"
+                  placeholder="Información adicional sobre la transacción..."
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm resize-none"
+                ></textarea>
+              </div>
+              
+              <!-- Botones de acción -->
+              <div class="flex gap-3 pt-6">
+                <button 
+                  type="button"
+                  @click="closeModal" 
+                  class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-semibold text-sm"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  :disabled="submitting" 
+                  class="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-lg shadow-md transition-all duration-200 ease-in-out font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                >
+                  <svg v-if="submitting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
+                    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" class="opacity-75"/>
+                  </svg>
+                  {{ editing ? 'Actualizar' : 'Crear' }}
+                </button>
+              </div>
+              
+              <div v-if="formError" class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-center text-sm animate-pulse mt-4" data-testid="form-error">
+                {{ formError }}
+              </div>
+            </form>          </div>
         </div>
       </div>
     </div>
+
+    <!-- Confirmation Modal -->
+    <ConfirmationModal
+      :is-open="confirmationModal.isOpen.value"
+      :loading="confirmationModal.loading.value"
+      :config="confirmationModal.modalConfig"
+      @confirm="confirmationModal.confirm"
+      @cancel="confirmationModal.cancel"
+    />
   </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent } from 'vue';
-const DashboardLayout = defineAsyncComponent(() => import('../../components/DashboardLayout.vue'));
-const MetricCard = defineAsyncComponent(() => import('../../components/MetricCard.vue'));
-
-import { ref, computed, onMounted, watch, reactive } from 'vue';
+import { defineAsyncComponent, ref, computed, onMounted, watch, reactive } from 'vue';
 import { useTransactionsStore } from '../../stores/transaction/transactions';
 import { useAccountsStore } from '../../stores/account/accounts';
 import { useCategoriesStore } from '../../stores/category/categories';
 import { useToast } from 'vue-toast-notification';
+import { useConfirmationModal } from '../../composables/useConfirmationModal';
 import type { Transaction, TransactionType, TransactionFilters } from '../../types/transaction/transaction';
+
+const DashboardLayout = defineAsyncComponent(() => import('../../components/DashboardLayout.vue'));
+const ConfirmationModal = defineAsyncComponent(() => import('../../components/ConfirmationModal.vue'));
+
+// Confirmation modal composable
+const confirmationModal = useConfirmationModal();
 
 const store = useTransactionsStore();
 const accountsStore = useAccountsStore();
@@ -256,13 +544,21 @@ function fetchAll() {
   store.fetchAll(cleanFilters(filters));
 }
 
-async function fetchStatsWithError() {
+// Función para actualizar tanto transacciones como estadísticas
+async function refreshData() {
+  fetchAll();
+  await fetchStatsWithError(false);
+}
+
+async function fetchStatsWithError(showToastOnError = true) {
   try {
     await store.fetchStats();
     statsError.value = '';
   } catch (e: any) {
     statsError.value = e?.response?.data?.message || e?.message || 'Error al cargar métricas';
-    toast.error(statsError.value);
+    if (showToastOnError) {
+      toast.error(statsError.value);
+    }
   }
 }
 
@@ -386,10 +682,9 @@ async function submitForm() {
       toast.success('Transacción actualizada');
     } else {
       await store.create(payload);
-      toast.success('Transacción creada');
-    }
+      toast.success('Transacción creada');    }
     closeModal();
-    fetchAll();
+    refreshData(); // Actualizar transacciones y estadísticas
   } catch (e: any) {
     formError.value = e?.response?.data?.message || e.message || 'Error al guardar';
     toast.error(formError.value || 'Error desconocido');
@@ -399,12 +694,82 @@ async function submitForm() {
 }
 
 async function remove(id: number) {
+  // Find the transaction to get its details for the confirmation modal
+  const transaction = transactions.value.find(t => t.id === id);
+  if (!transaction) return;
+
+  // Get account and category names for display
+  const account = accounts.value.find(a => a.id === transaction.account?.id);
+  const category = categories.value.find(c => c.id === transaction.category?.id);
+
+  const itemName = transaction.description || 'Sin descripción';
+  const itemDescription = `${account?.name || 'Cuenta desconocida'} • ${category?.name || 'Sin categoría'}`;
+
+  const confirmed = await confirmationModal.confirmDelete(itemName, itemDescription);
+
+  if (!confirmed) return;
+
   try {
     await store.remove(id);
     toast.success('Transacción eliminada');
-    fetchAll();
+    refreshData(); // Actualizar transacciones y estadísticas
   } catch (e: any) {
     toast.error(e?.message || 'Error al eliminar');
   }
 }
 </script>
+
+<style scoped>
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.dashboard-header p {
+  color: #6b7280;
+  margin: 0.5rem 0 0 0;
+}
+
+.animate-modal {
+  animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes modalSlideIn {
+  0% { 
+    transform: scale(0.9) translateY(-20px); 
+    opacity: 0; 
+  }
+  100% { 
+    transform: scale(1) translateY(0); 
+    opacity: 1; 
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+}
+</style>

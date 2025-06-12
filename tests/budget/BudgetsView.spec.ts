@@ -15,6 +15,7 @@ vi.mock('../../src/stores/category/categories', () => ({
 import BudgetsView from '../../src/views/budget/Budgets.vue';
 import { useBudgetsStore } from '../../src/stores/budget/budgets';
 import { useCategoriesStore } from '../../src/stores/category/categories';
+import { useConfirmationModal } from '../../src/composables/useConfirmationModal';
 import type { Budget } from '../../src/types/budget/budget';
 import type { Category } from '../../src/types/category/category';
 
@@ -32,6 +33,19 @@ vi.mock('vue-toast-notification', () => ({
     success: vi.fn(),
     error: vi.fn(),
   }),
+}));
+
+// Mock useConfirmationModal
+vi.mock('../../src/composables/useConfirmationModal', () => ({
+  useConfirmationModal: vi.fn()
+}));
+
+// Mock DashboardLayout component
+vi.mock('../../src/components/DashboardLayout.vue', () => ({
+  default: {
+    name: 'DashboardLayout',
+    template: '<div data-testid="dashboard-layout"><slot /></div>',
+  },
 }));
 
 const mockBudget: Budget = {
@@ -78,6 +92,7 @@ describe('Budgets.vue', () => {
   let router: any;
   let mockBudgetsStore: any;
   let mockCategoriesStore: any;
+  let mockConfirmationModal: any;
 
   beforeEach(() => {
     pinia = createPinia();
@@ -87,6 +102,21 @@ describe('Budgets.vue', () => {
       history: createWebHistory(),
       routes: [{ path: '/budgets', component: BudgetsView }]
     });
+
+    // Create mock confirmation modal
+    mockConfirmationModal = {
+      isOpen: { value: false },
+      loading: { value: false },
+      modalConfig: {},
+      openModal: vi.fn().mockResolvedValue(true),
+      confirm: vi.fn(),
+      cancel: vi.fn(),
+      closeModal: vi.fn(),
+      setLoading: vi.fn(),
+      confirmDelete: vi.fn().mockResolvedValue(true),
+      confirmRestore: vi.fn().mockResolvedValue(true),
+      confirmStatusChange: vi.fn().mockResolvedValue(true)
+    };
 
     // Create mock stores
     mockBudgetsStore = {
@@ -114,23 +144,18 @@ describe('Budgets.vue', () => {
     mockCategoriesStore = {
       categories: [mockCategory],
       fetchAll: vi.fn(),
-    };
-
-    // Mock the store hooks
+    };    // Mock the store hooks
     vi.mocked(useBudgetsStore).mockReturnValue(mockBudgetsStore);
     vi.mocked(useCategoriesStore).mockReturnValue(mockCategoriesStore);
+    vi.mocked(useConfirmationModal).mockReturnValue(mockConfirmationModal);
   });
-
   it('muestra la lista de presupuestos', async () => {
     const wrapper = mount(BudgetsView, {
       global: {
         plugins: [pinia, router],
         stubs: {
           DashboardLayout: {
-            template: '<div><slot /></div>',
-          },
-          MetricCard: {
-            template: '<div data-testid="metric-card"><slot /></div>',
+            template: '<div data-testid="dashboard-layout"><slot /></div>',
           },
         },
       },
@@ -142,17 +167,13 @@ describe('Budgets.vue', () => {
     expect(wrapper.find('[data-testid="budget-card"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('Groceries Budget');
     expect(wrapper.text()).toContain('$500.00');
-  });
-  it('abre el modal de nuevo presupuesto', async () => {
+  });  it('abre el modal de nuevo presupuesto', async () => {
     const wrapper = mount(BudgetsView, {
       global: {
         plugins: [pinia, router],
         stubs: {
           DashboardLayout: {
-            template: '<div><slot /></div>',
-          },
-          MetricCard: {
-            template: '<div data-testid="metric-card"><slot /></div>',
+            template: '<div data-testid="dashboard-layout"><slot /></div>',
           },
         },
       },
@@ -167,17 +188,14 @@ describe('Budgets.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find('[data-testid="budget-modal"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="modal-title"]').text()).toBe('Nuevo presupuesto');
+    expect(wrapper.find('[data-testid="modal-title"]').text()).toBe('Crear Nuevo Presupuesto');
   });  it('valida el formulario y muestra errores', async () => {
     const wrapper = mount(BudgetsView, {
       global: {
         plugins: [pinia, router],
         stubs: {
           DashboardLayout: {
-            template: '<div><slot /></div>',
-          },
-          MetricCard: {
-            template: '<div data-testid="metric-card"><slot /></div>',
+            template: '<div data-testid="dashboard-layout"><slot /></div>',
           },
         },
       },
@@ -208,10 +226,7 @@ describe('Budgets.vue', () => {
         plugins: [pinia, router],
         stubs: {
           DashboardLayout: {
-            template: '<div><slot /></div>',
-          },
-          MetricCard: {
-            template: '<div data-testid="metric-card"><slot /></div>',
+            template: '<div data-testid="dashboard-layout"><slot /></div>',
           },
         },
       },
@@ -266,10 +281,7 @@ describe('Budgets.vue', () => {
         plugins: [pinia, router],
         stubs: {
           DashboardLayout: {
-            template: '<div><slot /></div>',
-          },
-          MetricCard: {
-            template: '<div data-testid="metric-card"><slot /></div>',
+            template: '<div data-testid="dashboard-layout"><slot /></div>',
           },
         },
       },
@@ -284,7 +296,9 @@ describe('Budgets.vue', () => {
     const editBtn = wrapper.find('[data-testid="edit-budget-btn"]');
     expect(editBtn.exists()).toBe(true);
     await editBtn.trigger('click');
-    await wrapper.vm.$nextTick();    // Verify modal is open and form is populated
+    await wrapper.vm.$nextTick();
+
+    // Verify modal is open and form is populated
     expect(wrapper.find('[data-testid="budget-modal"]').exists()).toBe(true);
     expect((wrapper.find('#budget-name').element as HTMLInputElement).value).toBe('Groceries Budget');
 
@@ -303,20 +317,16 @@ describe('Budgets.vue', () => {
     expect(mockBudgetsStore.update).toHaveBeenCalledWith(1, expect.objectContaining({
       name: 'Updated Budget',
     }));
-  });
-
-  it('llama a store.remove al eliminar presupuesto', async () => {
+  });  it('llama a store.remove al eliminar presupuesto', async () => {
     mockBudgetsStore.remove.mockResolvedValue(undefined);
+    mockConfirmationModal.confirmDelete.mockResolvedValue(true);
 
     const wrapper = mount(BudgetsView, {
       global: {
         plugins: [pinia, router],
         stubs: {
           DashboardLayout: {
-            template: '<div><slot /></div>',
-          },
-          MetricCard: {
-            template: '<div data-testid="metric-card"><slot /></div>',
+            template: '<div data-testid="dashboard-layout"><slot /></div>',
           },
         },
       },
@@ -328,21 +338,20 @@ describe('Budgets.vue', () => {
     await wrapper.find('[data-testid="delete-budget-btn"]').trigger('click');
     await wrapper.vm.$nextTick();
 
+    expect(mockConfirmationModal.confirmDelete).toHaveBeenCalled();
     expect(mockBudgetsStore.remove).toHaveBeenCalledWith(1);
   });
 
   it('llama a store.toggleStatus al cambiar estado', async () => {
     mockBudgetsStore.toggleStatus.mockResolvedValue({ ...mockBudget, is_active: false });
+    mockConfirmationModal.confirmStatusChange.mockResolvedValue(true);
 
     const wrapper = mount(BudgetsView, {
       global: {
         plugins: [pinia, router],
         stubs: {
           DashboardLayout: {
-            template: '<div><slot /></div>',
-          },
-          MetricCard: {
-            template: '<div data-testid="metric-card"><slot /></div>',
+            template: '<div data-testid="dashboard-layout"><slot /></div>',
           },
         },
       },
@@ -354,6 +363,7 @@ describe('Budgets.vue', () => {
     await wrapper.find('[data-testid="toggle-budget-btn"]').trigger('click');
     await wrapper.vm.$nextTick();
 
+    expect(mockConfirmationModal.confirmStatusChange).toHaveBeenCalled();
     expect(mockBudgetsStore.toggleStatus).toHaveBeenCalledWith(1);
   });
 });

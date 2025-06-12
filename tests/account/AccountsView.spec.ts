@@ -3,10 +3,16 @@ import { mount, flushPromises } from '@vue/test-utils';
 import Accounts from '../../src/views/account/Accounts.vue';
 import { createTestingPinia } from '@pinia/testing';
 import { useAccountsStore } from '../../src/stores/account/accounts';
+import { useConfirmationModal } from '../../src/composables/useConfirmationModal';
 import { setActivePinia } from 'pinia';
 
 // Mock toast
 vi.mock('vue-toast-notification', () => ({ useToast: () => ({ error: vi.fn(), success: vi.fn() }) }));
+
+// Mock useConfirmationModal
+vi.mock('../../src/composables/useConfirmationModal', () => ({
+  useConfirmationModal: vi.fn()
+}));
 
 // Mock router
 vi.mock('vue-router', () => ({
@@ -27,7 +33,27 @@ vi.mock('vue-router', () => ({
 describe('Accounts.vue', () => {
   let store: ReturnType<typeof useAccountsStore>;
   let wrapper: any;
+  let mockConfirmationModal: any;
+
   beforeEach(async () => {
+    // Create mock confirmation modal
+    mockConfirmationModal = {
+      isOpen: { value: false },
+      loading: { value: false },
+      modalConfig: {},
+      openModal: vi.fn().mockResolvedValue(true),
+      confirm: vi.fn(),
+      cancel: vi.fn(),
+      closeModal: vi.fn(),
+      setLoading: vi.fn(),
+      confirmDelete: vi.fn().mockResolvedValue(true),
+      confirmRestore: vi.fn().mockResolvedValue(true),
+      confirmStatusChange: vi.fn().mockResolvedValue(true)
+    };
+
+    // Mock the composable
+    vi.mocked(useConfirmationModal).mockReturnValue(mockConfirmationModal);
+
     const pinia = createTestingPinia({
       initialState: {
         accounts: {
@@ -86,15 +112,17 @@ describe('Accounts.vue', () => {
     await flushPromises();
     
     expect(wrapper.text()).toContain('Cuenta Principal');
-    expect(wrapper.findAll('.account-card').length).toBe(1);
+    // Look specifically for account cards in the grid, not all white rounded elements
+    const accountsGrid = wrapper.find('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3');
+    expect(accountsGrid.exists()).toBe(true);
+    expect(accountsGrid.findAll('div[class*="bg-white rounded-2xl"]').length).toBe(1);
   });
-
   it('abre el modal de nueva cuenta', async () => {
     const newBtn = wrapper.find('[data-testid="new-account-btn"]');
     expect(newBtn.exists()).toBe(true);
     await newBtn.trigger('click');
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain('Nueva cuenta');
+    expect(wrapper.text()).toContain('Nueva Cuenta');
   });
 
   it('valida el formulario y muestra errores', async () => {
@@ -128,13 +156,15 @@ describe('Accounts.vue', () => {
     await flushPromises();
     expect(store.create).toHaveBeenCalled();
   });
-
   it('llama a store.update al editar cuenta', async () => {
     await wrapper.vm.$nextTick();
-    const editBtn = wrapper.find('.icon-btn.edit');
+    
+    // Find the edit button (the first button with blue styling)
+    const editBtn = wrapper.find('button[class*="bg-blue-50"]');
     expect(editBtn.exists()).toBe(true);
     
     await editBtn.trigger('click');
+    await wrapper.vm.$nextTick();
     await flushPromises();
     
     store.update = vi.fn().mockResolvedValue({});
@@ -144,27 +174,30 @@ describe('Accounts.vue', () => {
       await flushPromises();
       expect(store.update).toHaveBeenCalled();
     }
-  });
-
-  it('llama a store.remove al eliminar cuenta', async () => {
+  });  it('llama a store.remove al eliminar cuenta', async () => {
     await wrapper.vm.$nextTick();
     store.remove = vi.fn().mockResolvedValue({});
+    mockConfirmationModal.confirmDelete.mockResolvedValue(true);
     
-    const deleteBtn = wrapper.find('.icon-btn.delete');
+    // Find the delete button (button with red styling)
+    const deleteBtn = wrapper.find('button[class*="bg-red-50"]');
     expect(deleteBtn.exists()).toBe(true);
     await deleteBtn.trigger('click');
     await flushPromises();
+    expect(mockConfirmationModal.confirmDelete).toHaveBeenCalled();
     expect(store.remove).toHaveBeenCalled();
   });
-
   it('llama a store.toggleStatus al cambiar estado', async () => {
     await wrapper.vm.$nextTick();
     store.toggleStatus = vi.fn().mockResolvedValue({});
+    mockConfirmationModal.confirmStatusChange.mockResolvedValue(true);
     
-    const toggleBtn = wrapper.find('.icon-btn.toggle');
+    // Find the toggle status button (button with gray styling that contains "Desactivar" or "Activar")
+    const toggleBtn = wrapper.find('button[class*="bg-gray-50"]');
     expect(toggleBtn.exists()).toBe(true);
     await toggleBtn.trigger('click');
     await flushPromises();
+    expect(mockConfirmationModal.confirmStatusChange).toHaveBeenCalled();
     expect(store.toggleStatus).toHaveBeenCalled();
   });
 });
