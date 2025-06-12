@@ -3,10 +3,16 @@ import { mount, flushPromises } from '@vue/test-utils';
 import Transactions from '../../src/views/transaction/Transactions.vue';
 import { createTestingPinia } from '@pinia/testing';
 import { useTransactionsStore } from '../../src/stores/transaction/transactions';
+import { useConfirmationModal } from '../../src/composables/useConfirmationModal';
 import { setActivePinia } from 'pinia';
 
 // Mock toast
 vi.mock('vue-toast-notification', () => ({ useToast: () => ({ error: vi.fn(), success: vi.fn() }) }));
+
+// Mock useConfirmationModal
+vi.mock('../../src/composables/useConfirmationModal', () => ({
+  useConfirmationModal: vi.fn()
+}));
 
 // Mock router
 vi.mock('vue-router', () => ({
@@ -27,8 +33,27 @@ vi.mock('vue-router', () => ({
 describe('Transactions.vue', () => {
   let store: ReturnType<typeof useTransactionsStore>;
   let wrapper: any;
+  let mockConfirmationModal: any;
 
   beforeEach(async () => {
+    // Create mock confirmation modal
+    mockConfirmationModal = {
+      isOpen: { value: false },
+      loading: { value: false },
+      modalConfig: {},
+      openModal: vi.fn().mockResolvedValue(true),
+      confirm: vi.fn(),
+      cancel: vi.fn(),
+      closeModal: vi.fn(),
+      setLoading: vi.fn(),
+      confirmDelete: vi.fn().mockResolvedValue(true),
+      confirmRestore: vi.fn().mockResolvedValue(true),
+      confirmStatusChange: vi.fn().mockResolvedValue(true)
+    };
+
+    // Mock the composable
+    vi.mocked(useConfirmationModal).mockReturnValue(mockConfirmationModal);
+
     const pinia = createTestingPinia({
       initialState: {
         transactions: {
@@ -93,16 +118,12 @@ describe('Transactions.vue', () => {
       can_edit: true,
       can_delete: true,
     });    store.fetchStats = vi.fn();
-    
-    wrapper = mount(Transactions, {
+      wrapper = mount(Transactions, {
       global: {
         plugins: [pinia],
         stubs: {
           'DashboardLayout': {
             template: '<div class="dashboard-layout"><slot /></div>'
-          },
-          'MetricCard': {
-            template: '<div class="metric-card"><slot /></div>'
           }
         }
       },
@@ -117,13 +138,12 @@ describe('Transactions.vue', () => {
     const rows = wrapper.findAll('tbody tr');
     expect(rows.length).toBeGreaterThan(0);
   });
-
   it('abre el modal de nueva transacción', async () => {
     const newBtn = wrapper.find('[data-testid="new-transaction-btn"]');
     expect(newBtn.exists()).toBe(true);
     await newBtn.trigger('click');
     await wrapper.vm.$nextTick();
-    expect(wrapper.text()).toContain('Nueva transacción');
+    expect(wrapper.text()).toContain('Nueva Transacción');
   });
 
   it('valida el formulario y muestra errores', async () => {
@@ -156,10 +176,9 @@ describe('Transactions.vue', () => {
     await flushPromises();
     expect(store.create).toHaveBeenCalled();
   });
-
   it('llama a store.update al editar transacción', async () => {
     await wrapper.vm.$nextTick();
-    const editBtn = wrapper.find('button[aria-label="Editar transacción"]');
+    const editBtn = wrapper.find('button[title="Editar"]');
     if (editBtn.exists()) {
       await editBtn.trigger('click');
       await flushPromises();
@@ -173,15 +192,16 @@ describe('Transactions.vue', () => {
       }
     }
   });
-
   it('llama a store.remove al eliminar transacción', async () => {
     await wrapper.vm.$nextTick();
     store.remove = vi.fn().mockResolvedValue({});
+    mockConfirmationModal.confirmDelete.mockResolvedValue(true);
     
-    const deleteBtn = wrapper.find('button[aria-label="Eliminar transacción"]');
+    const deleteBtn = wrapper.find('button[title="Eliminar"]');
     if (deleteBtn.exists()) {
       await deleteBtn.trigger('click');
       await flushPromises();
+      expect(mockConfirmationModal.confirmDelete).toHaveBeenCalled();
       expect(store.remove).toHaveBeenCalled();
     }
   });
