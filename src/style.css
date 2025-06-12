@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+/*
+  Paleta de colores principal para la app (moderna, elegante, minimalista, abundancia):
+  --color-primary: #1A237E;        // Azul profundo (confianza, abundancia)
+  --color-primary-light: #3949AB;  // Azul medio
+  --color-accent: #FFD600;         // Amarillo dorado (lujo, riqueza)
+  --color-success: #43A047;        // Verde éxito
+  --color-danger: #E53935;         // Rojo elegante
+  --color-bg: #F5F7FA;             // Fondo claro minimalista
+  --color-surface: #FFFFFF;        // Superficies
+  --color-text: #232323;           // Texto principal
+  --color-muted: #7B7B7B;          // Texto secundario
+  --color-border: #E0E0E0;         // Bordes sutiles
+*/
+:root {
+  --color-primary: #1A237E;
+  --color-primary-light: #3949AB;
+  --color-accent: #FFD600;
+  --color-success: #43A047;
+  --color-danger: #E53935;
+  --color-bg: #F5F7FA;
+  --color-surface: #FFFFFF;
+  --color-text: #232323;
+  --color-muted: #7B7B7B;
+  --color-border: #E0E0E0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
