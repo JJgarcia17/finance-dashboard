@@ -1,7 +1,46 @@
 <template>
-  <div class="flex min-h-screen bg-gray-50">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-xl border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-30 transition-all duration-300 ease-in-out">
+  <div class="flex min-h-screen bg-gray-50">    <!-- Mobile Menu Overlay -->
+    <Transition
+      enter-active-class="transition-opacity duration-300"
+      leave-active-class="transition-opacity duration-300"
+      enter-from-class="opacity-0"
+      leave-to-class="opacity-0"
+    >      <div 
+        v-if="isMobileMenuOpen && isMobile" 
+        @click="closeMobileMenu"
+        class="fixed inset-0 bg-black bg-opacity-50 z-20"
+      ></div>
+    </Transition><!-- Mobile Menu Button -->
+    <button
+      v-if="isMobile"
+      @click="toggleMobileMenu"
+      class="fixed top-4 left-4 z-50 bg-white rounded-xl shadow-lg p-3 hover:bg-gray-50 transition-all duration-200"
+      :class="{ 'left-72': isMobileMenuOpen }"
+    >
+      <div class="w-6 h-6 flex flex-col justify-center items-center">
+        <span 
+          class="block w-5 h-0.5 bg-gray-600 transition-all duration-300"
+          :class="{ 'rotate-45 translate-y-1': isMobileMenuOpen }"
+        ></span>
+        <span 
+          class="block w-5 h-0.5 bg-gray-600 mt-1 transition-all duration-300"
+          :class="{ 'opacity-0': isMobileMenuOpen }"
+        ></span>
+        <span 
+          class="block w-5 h-0.5 bg-gray-600 mt-1 transition-all duration-300"
+          :class="{ '-rotate-45 -translate-y-1': isMobileMenuOpen }"
+        ></span>
+      </div>
+    </button>    <!-- Sidebar -->
+    <aside 
+      class="w-64 bg-white shadow-xl border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 transition-all duration-300 ease-in-out"
+      :class="{ 
+        'translate-x-0 z-50': isMobileMenuOpen || !isMobile,
+        '-translate-x-full z-30': !isMobileMenuOpen && isMobile,
+        'z-30': !isMobile
+      }"
+      @click.stop
+    >
       <!-- Logo/Brand Section -->
       <div class="px-6 py-6 border-b border-gray-100">
         <div class="flex items-center gap-3">
@@ -32,11 +71,12 @@
 
       <!-- Navigation Menu -->
       <nav class="flex-1 px-4 py-6">
-        <div class="space-y-1">
-          <router-link 
+        <div class="space-y-1">          <router-link 
             v-for="item in menu" 
             :key="item.to" 
-            :to="item.to"            class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200 ease-in-out group relative hover:transform hover:translate-x-1"
+            :to="item.to"
+            @click="() => { closeMobileMenu(); }"
+            class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200 ease-in-out group relative hover:transform hover:translate-x-1"
             active-class="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 shadow-lg border-l-4 border-blue-500 active-nav-item"
           >
             <div class="flex items-center justify-center w-6 h-6 mr-3 text-gray-500 group-hover:text-gray-700 transition-colors duration-200">
@@ -57,10 +97,14 @@
           <span class="flex-1 text-left">Cerrar sesión</span>
         </button>
       </div>
-    </aside>
-
-    <!-- Main content -->
-    <main class="flex-1 ml-64 transition-all duration-300">
+    </aside>    <!-- Main content -->
+    <main 
+      class="flex-1 transition-all duration-300"
+      :class="{ 
+        'ml-64': !isMobile,
+        'ml-0': isMobile
+      }"
+    >
       <slot />
     </main>
   </div>
@@ -68,11 +112,70 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '../stores/auth/auth';
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const auth = useAuthStore();
 const router = useRouter();
+
+// Mobile menu state
+const isMobileMenuOpen = ref(false);
+const isMobile = ref(false);
+
+// Check if device is mobile
+const checkMobile = () => {
+  if (typeof window !== 'undefined') {
+    isMobile.value = window.innerWidth < 768;
+    if (!isMobile.value) {
+      isMobileMenuOpen.value = false;
+      document.body.classList.remove('mobile-menu-open');
+    }
+  }
+};
+
+// Mobile menu functions
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value;
+  
+  // Prevent body scroll when menu is open
+  if (isMobileMenuOpen.value) {
+    document.body.classList.add('mobile-menu-open');
+  } else {
+    document.body.classList.remove('mobile-menu-open');
+  }
+};
+
+const closeMobileMenu = () => {
+  isMobileMenuOpen.value = false;
+  document.body.classList.remove('mobile-menu-open');
+};
+
+// Handle window resize
+const handleResize = () => {
+  checkMobile();
+};
+
+// Handle escape key
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && isMobileMenuOpen.value) {
+    closeMobileMenu();
+  }
+};
+
+onMounted(() => {
+  // Usar nextTick para asegurar que el DOM esté completamente montado
+  setTimeout(() => {
+    checkMobile();
+  }, 10);
+  window.addEventListener('resize', handleResize);
+  document.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+  document.removeEventListener('keydown', handleKeydown);
+  document.body.classList.remove('mobile-menu-open');
+});
 
 const user = computed(() => auth.user || { name: 'Usuario', email: '' });
 const userInitials = computed(() => {
@@ -129,39 +232,34 @@ function logout() {
   color: #2563eb !important;
 }
 
-/* Responsive Design */
-@media (max-width: 900px) {
-  aside {
-    width: 100vw;
-    position: static;
-    min-height: auto;
-    box-shadow: none;
-  }
-  
-  main {
-    margin-left: 0;
-    padding: 1rem;
-  }
-}
-
-/* Mobile Menu Toggle */
-@media (max-width: 768px) {
+/* Mobile Menu Animations */
+@media (max-width: 767px) {
   aside {
     transform: translateX(-100%);
-    position: fixed;
-    z-index: 50;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    z-index: 50 !important;
   }
   
-  aside.mobile-open {
+  aside.translate-x-0 {
     transform: translateX(0);
-  }
-  
-  main {
-    margin-left: 0;
+    z-index: 50 !important;
   }
 }
 
-/* Scrollbar Styling for Navigation */
+/* Desktop styles */
+@media (min-width: 768px) {
+  aside {
+    transform: translateX(0) !important;
+  }
+}
+
+/* Smooth scrolling for navigation */
+nav {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
+}
+
+/* Webkit scrollbar styling */
 nav::-webkit-scrollbar {
   width: 0.25rem;
 }
@@ -178,5 +276,42 @@ nav::-webkit-scrollbar-thumb {
 
 nav::-webkit-scrollbar-thumb:hover {
   background-color: #9ca3af;
+}
+
+/* Mobile menu button animation */
+.mobile-menu-btn {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Prevent body scroll when mobile menu is open */
+.mobile-menu-open {
+  overflow: hidden;
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 480px) {
+  aside {
+    width: 85vw;
+  }
+  
+  .mobile-menu-btn {
+    top: 1rem;
+    left: 1rem;
+  }
+}
+
+/* Focus states for accessibility */
+button:focus-visible,
+.router-link-active:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
 </style>

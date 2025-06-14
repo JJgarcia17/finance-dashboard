@@ -27,6 +27,15 @@
 }
 
 body {
-  background: var(--color-bg);
+  background: var(--color-bg) !important;
   color: var(--color-text);
+  min-height: 100vh;
+}
+
+/* Mobile menu styles */
+body.mobile-menu-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  background: var(--color-bg);
 }
