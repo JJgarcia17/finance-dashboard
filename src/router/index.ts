@@ -42,11 +42,16 @@ const routes = [
     name: 'Transactions',
     component: () => import('../views/transaction/Transactions.vue'),
     meta: { requiresAuth: true },
-  },
-  {
+  },  {
     path: '/budgets',
     name: 'Budgets',
     component: () => import('../views/budget/Budgets.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/chat',
+    name: 'FinancialChat',
+    component: () => import('../views/chat/FinancialChatView.vue'),
     meta: { requiresAuth: true },
   }
 ];
@@ -57,13 +62,13 @@ const router = createRouter({
 });
 
 // Protección de rutas y persistencia de sesión
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const auth = useAuthStore();
   // Restaurar sesión si no está autenticado pero hay token
   if (!auth.isAuthenticated && localStorage.getItem('auth_token')) {
     auth.restoreSession();
   }
-  const publicPages = ['/login', '/register'];
+  const publicPages = ['/', '/login', '/register'];
   const authRequired = !publicPages.includes(to.path);
   if (authRequired && !auth.isAuthenticated) {
     return next('/login');
