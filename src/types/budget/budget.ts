@@ -31,23 +31,23 @@ export interface BudgetFilters {
 export interface CreateBudgetData {
   category_id: number;
   name: string;
-  amount: string;
+  amount: number; // Cambiar de string a number
   period: BudgetPeriod;
   start_date: string;
   end_date: string;
   is_active?: boolean;
-  description?: string;
+  description?: string | null; // Permitir null
 }
 
 export interface UpdateBudgetData {
   category_id?: number;
   name?: string;
-  amount?: string;
+  amount?: number; // Cambiar de string a number
   period?: BudgetPeriod;
   start_date?: string;
   end_date?: string;
   is_active?: boolean;
-  description?: string;
+  description?: string | null; // Permitir null
 }
 
 export interface BudgetStats {
