@@ -551,11 +551,10 @@ watch(
 
 // Methods
 function edit(budget: Budget) {
-  editing.value = budget;
-  Object.assign(form, {
+  editing.value = budget;  Object.assign(form, {
     name: budget.name,
     category_id: budget.category.id,
-    amount: budget.amount,
+    amount: budget.amount, // Mantener como string para el input
     period: budget.period,
     start_date: budget.start_date,
     end_date: budget.end_date,
@@ -597,9 +596,8 @@ async function submitForm() {
     toast.error(formError.value);
     return;
   }
-  
-  if (!form.amount || parseFloat(form.amount) <= 0) {
-    formError.value = 'El monto debe ser mayor a 0';
+    if (!form.amount || parseFloat(form.amount) <= 0 || isNaN(parseFloat(form.amount))) {
+    formError.value = 'El monto debe ser mayor a 0 y debe ser un número válido';
     toast.error(formError.value);
     return;
   }
@@ -623,17 +621,16 @@ async function submitForm() {
   }
 
   submitting.value = true;
-  
-  try {
+    try {
     const payload = {
-      name: form.name,
+      name: form.name.trim(),
       category_id: form.category_id as number,
-      amount: form.amount,
+      amount: parseFloat(form.amount), // Convertir a número
       period: form.period as BudgetPeriod,
       start_date: form.start_date,
       end_date: form.end_date,
       is_active: form.is_active,
-      description: form.description || undefined,
+      description: form.description?.trim() || null, // null en lugar de undefined
     };
 
     if (editing.value) {

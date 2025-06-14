@@ -42,11 +42,16 @@ const routes = [
     name: 'Transactions',
     component: () => import('../views/transaction/Transactions.vue'),
     meta: { requiresAuth: true },
-  },
-  {
+  },  {
     path: '/budgets',
     name: 'Budgets',
     component: () => import('../views/budget/Budgets.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/chat',
+    name: 'FinancialChat',
+    component: () => import('../views/chat/FinancialChatView.vue'),
     meta: { requiresAuth: true },
   }
 ];
