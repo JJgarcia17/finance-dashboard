@@ -63,7 +63,7 @@ router.beforeEach((to, _from, next) => {
   if (!auth.isAuthenticated && localStorage.getItem('auth_token')) {
     auth.restoreSession();
   }
-  const publicPages = ['/login', '/register'];
+  const publicPages = ['/', '/login', '/register'];
   const authRequired = !publicPages.includes(to.path);
   if (authRequired && !auth.isAuthenticated) {
     return next('/login');
