@@ -31,3 +31,8 @@ export interface CategoryPayload {
   icon: string;
   is_active?: boolean;
 }
+
+export interface IconOption {
+  value: string;
+  label: string;
+}

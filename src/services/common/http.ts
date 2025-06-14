@@ -15,7 +15,7 @@ http.interceptors.request.use(
     config.headers = {
       ...config.headers,
       ...getCommonHeaders(),
-    };
+    } as any;
     return config;
   },
   (error) => {
