@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { login, logout as apiLogout, getToken } from '../../services/auth/auth';
+import { login, logout as apiLogout } from '../../services/auth/auth';
+import { getCurrentUser } from '../../services/auth/user';
 import axios from 'axios';
 import { useToast } from 'vue-toast-notification';
 
@@ -14,23 +15,24 @@ export const useAuthStore = defineStore('auth', () => {
   function setUser(u: any) {
     user.value = u;
   }
-
   function setToken(t: string) {
     token.value = t;
     isAuthenticated.value = !!t;
     if (t) {
       localStorage.setItem('auth_token', t);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${t}`;
     } else {
       localStorage.removeItem('auth_token');
+      delete axios.defaults.headers.common['Authorization'];
     }
   }
-
   async function loginUser(email: string, password: string) {
     loading.value = true;
     error.value = '';
     const toast = useToast();
     try {
       const result = await login(email, password);
+      // El backend devuelve: { success, status, message, data: { user, token } }
       const t = result.data?.token || result.token;
       const u = result.data?.user || result.user;
       setToken(t);
@@ -64,15 +66,24 @@ export const useAuthStore = defineStore('auth', () => {
     const toast = useToast();
     toast.success('Sesión cerrada correctamente');
     // No redirigir aquí, dejar que el componente lo haga
-  }
-
-  // Cargar usuario si hay token (opcional, según API)
-  function restoreSession() {
+  }  // Cargar usuario si hay token
+  async function restoreSession() {
     const t = localStorage.getItem('auth_token');
     if (t) {
+      // setToken ya configura el header de autorización
       setToken(t);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${t}`;
-      // Aquí podrías hacer una petición para obtener el usuario actual
+      
+      // Luego hacer petición para obtener el usuario actual
+      try {
+        const result = await getCurrentUser();
+        const u = result.data?.user || result.user;
+        setUser(u);
+      } catch (error) {
+        // Si el token es inválido, limpiar sesión
+        console.error('Error al restaurar sesión:', error);
+        setToken('');
+        setUser(null);
+      }
     }
   }
 
@@ -86,7 +97,6 @@ export const useAuthStore = defineStore('auth', () => {
       // El usuario activo recibirá feedback visual y redirección normalmente
     }
   });
-
   return {
     user,
     token,

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getCommonHeaders } from '../common/headers';
-import type { Category, CategoryFilters, CategoryPayload } from '../../types/category/category';
+import type { CategoryFilters, CategoryPayload } from '../../types/category/category';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 const BASE = `${API_URL}/categories`;

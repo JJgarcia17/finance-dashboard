@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getCommonHeaders } from '../common/headers';
-import type { Account, AccountFilters, AccountPayload } from '../../types/account/account';
+import type { AccountFilters, AccountPayload } from '../../types/account/account';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 const BASE = `${API_URL}/accounts`;

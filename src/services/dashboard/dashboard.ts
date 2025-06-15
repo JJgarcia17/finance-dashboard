@@ -1,12 +1,12 @@
 import { fetchAccountStats } from '../account/accounts';
-import { fetchTransactionStatsByCurrency } from '../transaction/transactions';
+import { fetchTransactionStats } from '../transaction/transactions';
 import type { DashboardStats, CurrencyStats } from '../../types/dashboard/dashboard';
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   try {
     const [accountStatsResponse, transactionStatsResponse] = await Promise.all([
       fetchAccountStats(),
-      fetchTransactionStatsByCurrency()
+      fetchTransactionStats()
     ]);
 
     // Convert account stats by_currency to array format
